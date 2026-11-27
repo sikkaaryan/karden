@@ -1,0 +1,2 @@
+-- Already included in the KARDEN baseline snapshot at 20261127201514.
+-- This no-op entry preserves the migration history of the live project.
