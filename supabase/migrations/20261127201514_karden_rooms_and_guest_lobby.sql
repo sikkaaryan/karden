@@ -1,5 +1,5 @@
 -- KARDEN fresh-project baseline snapshot.
--- This file creates the complete current schema and all game RPCs.
+-- Creates the current schema, game RPCs, chat and private realtime broadcasts.
 create schema if not exists karden_private;
 create table public.karden_rooms (
  id uuid primary key default gen_random_uuid(), code text not null unique, host_id uuid not null,
@@ -15,18 +15,90 @@ create table public.karden_players (
  eliminated boolean not null default false, connected boolean not null default true, joined_at timestamptz not null default now(),
  unique(room_id,user_id), unique(room_id,seat)
 );
+create table public.karden_messages (
+ id uuid primary key default gen_random_uuid(), room_id uuid not null references public.karden_rooms(id) on delete cascade,
+ player_id uuid not null references public.karden_players(id) on delete cascade, user_id uuid not null,
+ body text not null check(char_length(body) between 1 and 240), kind text not null check(kind in ('text','reaction')),
+ created_at timestamptz not null default now()
+);
 create table karden_private.room_state (
  room_id uuid primary key references public.karden_rooms(id) on delete cascade,
  state jsonb not null default '{}'::jsonb, updated_at timestamptz not null default now()
 );
 alter table public.karden_rooms enable row level security;
 alter table public.karden_players enable row level security;
+alter table public.karden_messages enable row level security;
 alter table karden_private.room_state enable row level security;
-revoke all on public.karden_rooms,public.karden_players from anon,authenticated;
+revoke all on public.karden_rooms,public.karden_players,public.karden_messages from anon,authenticated;
 revoke all on karden_private.room_state from anon,authenticated;
 revoke all on schema karden_private from public,anon;
 grant usage on schema karden_private to authenticated;
 
+CREATE OR REPLACE FUNCTION karden_private.broadcast_message_refresh()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+ perform realtime.send(jsonb_build_object('refresh',true,'message_id',new.id),'state_changed','room:'||new.room_id::text,true);
+ return new;
+end $function$
+;
+revoke all on function karden_private.broadcast_message_refresh() from public,anon,authenticated;
+CREATE OR REPLACE FUNCTION karden_private.broadcast_room_metadata_refresh()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+ perform realtime.send(
+   jsonb_build_object('refresh',true,'updated_at',now()),
+   'state_changed',
+   'room:'||new.id::text,
+   true
+ );
+ return new;
+end $function$
+;
+revoke all on function karden_private.broadcast_room_metadata_refresh() from public,anon,authenticated;
+CREATE OR REPLACE FUNCTION karden_private.broadcast_room_refresh()
+ RETURNS trigger
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+begin
+ perform realtime.send(
+   jsonb_build_object('refresh',true,'updated_at',now()),
+   'state_changed',
+   'room:'||new.room_id::text,
+   true
+ );
+ return new;
+end $function$
+;
+revoke all on function karden_private.broadcast_room_refresh() from public,anon,authenticated;
+CREATE OR REPLACE FUNCTION karden_private.can_access_room_topic()
+ RETURNS boolean
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare v_topic text; v_room_id uuid;
+begin
+ if auth.uid() is null then return false; end if;
+ v_topic:=realtime.topic();
+ begin
+   v_room_id:=split_part(v_topic,':',2)::uuid;
+ exception when invalid_text_representation then return false;
+ end;
+ return exists(select 1 from public.karden_players where room_id=v_room_id and user_id=auth.uid());
+end $function$
+;
+revoke all on function karden_private.can_access_room_topic() from public,anon;
+grant execute on function karden_private.can_access_room_topic() to authenticated;
 CREATE OR REPLACE FUNCTION karden_private.karden_call(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -193,7 +265,7 @@ begin
  if not found or v_room.host_id<>auth.uid() then raise exception 'Only the host can end the room'; end if;
  select state into v_state from karden_private.room_state where room_id=v_room.id for update;
  v_state:=jsonb_set(v_state,'{phase}',to_jsonb('finished'::text));
- v_state:=jsonb_set(v_state,'{lastAction}',to_jsonb('The host ended the room'));
+ v_state:=jsonb_set(v_state,'{lastAction}',to_jsonb('The host ended the room'::text));
  update karden_private.room_state set state=v_state,updated_at=now() where room_id=v_room.id;
  update public.karden_rooms set status='finished',turn_deadline=null,remaining_seconds=null,updated_at=now() where id=v_room.id;
  return jsonb_build_object('ended',true);
@@ -407,38 +479,65 @@ CREATE OR REPLACE FUNCTION karden_private.karden_room_snapshot(p_code text)
  SET search_path TO ''
 AS $function$
 declare
-  v_uid uuid := auth.uid(); v_room public.karden_rooms; v_me public.karden_players;
-  v_state jsonb; v_hand jsonb; v_players jsonb;
+ v_uid uuid:=auth.uid(); v_room public.karden_rooms; v_me public.karden_players;
+ v_state jsonb; v_hand jsonb; v_players jsonb; v_messages jsonb;
 begin
-  if v_uid is null then raise exception 'Guest session required'; end if;
-  select * into v_room from public.karden_rooms where code=upper(trim(p_code));
-  if not found then raise exception 'Room not found'; end if;
-  select * into v_me from public.karden_players where room_id=v_room.id and user_id=v_uid;
-  if not found then raise exception 'You are not a player in this room'; end if;
-  select state into v_state from karden_private.room_state where room_id=v_room.id;
-  select coalesce((select x.value->'hand' from jsonb_array_elements(v_state->'players') x(value) where x.value->>'playerId'=v_me.id::text),'[]'::jsonb) into v_hand;
-  select coalesce(jsonb_agg(jsonb_build_object(
-    'id',pl.id,'name',pl.display_name,'avatar',pl.avatar,'seat',pl.seat,
-    'score',pl.cumulative_score,'eliminated',pl.eliminated,'connected',pl.connected,
-    'cardCount',coalesce(jsonb_array_length((select x.value->'hand' from jsonb_array_elements(v_state->'players') x(value) where x.value->>'playerId'=pl.id::text)),0),
-    'isHost',pl.user_id=v_room.host_id
-  ) order by pl.seat),'[]'::jsonb) into v_players
-  from public.karden_players pl where pl.room_id=v_room.id;
-  return jsonb_build_object(
-    'roomId',v_room.id,'code',v_room.code,'status',v_room.status,'config',v_room.config,
-    'round',v_room.round_number,'currentPlayerId',v_room.current_player_id,
-    'turnDeadline',v_room.turn_deadline,'players',v_players,
-    'me',jsonb_build_object('id',v_me.id,'hand',v_hand),
-    'drawCount',coalesce(jsonb_array_length(v_state->'drawPile'),0),
-    'topDiscard',case when coalesce(jsonb_array_length(v_state->'discardPile'),0)>0 then v_state->'discardPile'->(jsonb_array_length(v_state->'discardPile')-1) else null end,
-    'lastAction',v_state->'lastAction','phase',coalesce(v_state->>'phase','playing'),
-    'roundResult',v_state->'roundResult','pendingPick',v_state->>'pendingBy'=v_me.id::text,
-    'handTotal',coalesce((select sum((x.value->>'value')::integer) from jsonb_array_elements(v_hand) x(value)),0)
-  );
+ if v_uid is null then raise exception 'Guest session required'; end if;
+ select * into v_room from public.karden_rooms where code=upper(trim(p_code));
+ if not found then raise exception 'Room not found'; end if;
+ select * into v_me from public.karden_players where room_id=v_room.id and user_id=v_uid;
+ if not found then raise exception 'You are not a player in this room'; end if;
+ select state into v_state from karden_private.room_state where room_id=v_room.id;
+ select coalesce((select x.value->'hand' from jsonb_array_elements(v_state->'players') x(value) where x.value->>'playerId'=v_me.id::text),'[]'::jsonb) into v_hand;
+ select coalesce(jsonb_agg(jsonb_build_object(
+   'id',pl.id,'name',pl.display_name,'avatar',pl.avatar,'seat',pl.seat,
+   'score',pl.cumulative_score,'eliminated',pl.eliminated,'connected',pl.connected,
+   'cardCount',coalesce(jsonb_array_length((select x.value->'hand' from jsonb_array_elements(v_state->'players') x(value) where x.value->>'playerId'=pl.id::text)),0),
+   'isHost',pl.user_id=v_room.host_id
+ ) order by pl.seat),'[]'::jsonb) into v_players from public.karden_players pl where pl.room_id=v_room.id;
+ select coalesce(jsonb_agg(jsonb_build_object('id',m.id,'playerId',m.player_id,'name',p.display_name,'body',m.body,'kind',m.kind,'createdAt',m.created_at) order by m.created_at),'[]'::jsonb)
+ into v_messages from (
+   select * from public.karden_messages where room_id=v_room.id order by created_at desc limit 40
+ ) m join public.karden_players p on p.id=m.player_id;
+ return jsonb_build_object(
+   'roomId',v_room.id,'code',v_room.code,'status',v_room.status,'config',v_room.config,
+   'round',v_room.round_number,'currentPlayerId',v_room.current_player_id,
+   'turnDeadline',v_room.turn_deadline,'players',v_players,
+   'me',jsonb_build_object('id',v_me.id,'hand',v_hand),
+   'drawCount',coalesce(jsonb_array_length(v_state->'drawPile'),0),
+   'topDiscard',case when coalesce(jsonb_array_length(v_state->'discardPile'),0)>0 then v_state->'discardPile'->(jsonb_array_length(v_state->'discardPile')-1) else null end,
+   'lastAction',v_state->'lastAction','phase',coalesce(v_state->>'phase','playing'),
+   'roundResult',v_state->'roundResult','pendingPick',v_state->>'pendingBy'=v_me.id::text,
+   'handTotal',coalesce((select sum((x.value->>'value')::integer) from jsonb_array_elements(v_hand) x(value)),0),
+   'messages',v_messages
+ );
 end $function$
 ;
 revoke all on function karden_private.karden_room_snapshot(text) from public,anon;
 grant execute on function karden_private.karden_room_snapshot(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_send_message(p_code text, p_body text, p_kind text)
+ RETURNS jsonb
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO ''
+AS $function$
+declare v_room public.karden_rooms; v_player public.karden_players; v_message public.karden_messages;
+begin
+ if auth.uid() is null then raise exception 'Guest session required'; end if;
+ if p_kind not in ('text','reaction') then raise exception 'Invalid message type'; end if;
+ if char_length(trim(p_body)) not between 1 and 240 then raise exception 'Message must be 1–240 characters'; end if;
+ if p_kind='reaction' and p_body not in ('👍','😂','🔥','👏','❤️','😮') then raise exception 'Unsupported reaction'; end if;
+ select * into v_room from public.karden_rooms where code=upper(trim(p_code));
+ if not found then raise exception 'Room not found'; end if;
+ select * into v_player from public.karden_players where room_id=v_room.id and user_id=auth.uid();
+ if not found then raise exception 'You are not a member of this room'; end if;
+ insert into public.karden_messages(room_id,player_id,user_id,body,kind)
+ values(v_room.id,v_player.id,auth.uid(),trim(p_body),p_kind) returning * into v_message;
+ return jsonb_build_object('messageId',v_message.id);
+end $function$
+;
+revoke all on function karden_private.karden_send_message(text,text,text) from public,anon;
+grant execute on function karden_private.karden_send_message(text,text,text) to authenticated;
 CREATE OR REPLACE FUNCTION karden_private.karden_start_game(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
@@ -658,6 +757,16 @@ AS $function$ select karden_private.karden_room_snapshot($1); $function$
 ;
 revoke all on function public.karden_room_snapshot(text) from public,anon;
 grant execute on function public.karden_room_snapshot(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_send_message(p_code text, p_body text, p_kind text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$
+ select karden_private.karden_send_message($1,$2,$3);
+$function$
+;
+revoke all on function public.karden_send_message(text,text,text) from public,anon;
+grant execute on function public.karden_send_message(text,text,text) to authenticated;
 CREATE OR REPLACE FUNCTION public.karden_start_game(p_code text)
  RETURNS jsonb
  LANGUAGE sql
@@ -674,3 +783,16 @@ AS $function$ select karden_private.karden_take_card($1,$2); $function$
 ;
 revoke all on function public.karden_take_card(text,text) from public,anon;
 grant execute on function public.karden_take_card(text,text) to authenticated;
+
+drop policy if exists karden_room_broadcast_receive on realtime.messages;
+create policy karden_room_broadcast_receive on realtime.messages
+for select to authenticated using (extension='broadcast' and karden_private.can_access_room_topic());
+drop trigger if exists karden_room_state_broadcast on karden_private.room_state;
+create trigger karden_room_state_broadcast after insert or update on karden_private.room_state
+for each row execute function karden_private.broadcast_room_refresh();
+drop trigger if exists karden_room_metadata_broadcast on public.karden_rooms;
+create trigger karden_room_metadata_broadcast after update on public.karden_rooms
+for each row execute function karden_private.broadcast_room_metadata_refresh();
+drop trigger if exists karden_message_broadcast on public.karden_messages;
+create trigger karden_message_broadcast after insert on public.karden_messages
+for each row execute function karden_private.broadcast_message_refresh();
