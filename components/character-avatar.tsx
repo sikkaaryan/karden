@@ -1,6 +1,4 @@
 "use client";
-import type { CSSProperties } from "react";
-
 export const DEFAULT_AVATAR="character-01";
 export const CHARACTER_AVATARS=Array.from({length:8},(_,i)=>`character-${String(i+1).padStart(2,"0")}`);
 
@@ -19,9 +17,8 @@ export function CharacterAvatar({avatar=DEFAULT_AVATAR,name="Player",size=44,cla
  if(avatar.startsWith("https://"))return <img src={avatar} alt={`${name} avatar`} width={size} height={size} className={`rounded-full object-cover ${className}`}/>;
  const index=Number(avatar.match(/character-(\d+)/)?.[1]??1)-1;
  const look=looks[((index%looks.length)+looks.length)%looks.length];
- return <svg role="img" aria-label={`${name} character avatar`} width={size} height={size} viewBox="0 0 80 80" className={className} style={{flexShrink:0} as CSSProperties}>
-  <defs><linearGradient id={`bg${index}`} x1="0" y1="0" x2="1" y2="1"><stop stopColor="#244b39"/><stop offset="1" stopColor="#101d17"/></linearGradient></defs>
-  <circle cx="40" cy="40" r="39" fill={`url(#bg${index})`}/>
+ return <svg role="img" aria-label={`${name} character avatar`} width={size} height={size} viewBox="0 0 80 80" className={className} style={{flexShrink:0}}>
+  <circle cx="40" cy="40" r="39" fill="#183a2c"/><circle cx="25" cy="22" r="25" fill="#ffffff" opacity=".035"/>
   <path d="M11 80Q13 57 40 57Q67 57 69 80Z" fill={look.shirt}/>
   <path d="M25 36Q15 25 19 43Q21 51 28 48M55 36Q65 25 61 43Q59 51 52 48" fill={look.skin} stroke="#3A2924" strokeWidth="1.5"/>
   <ellipse cx="40" cy="39" rx="21" ry="24" fill={look.skin}/>
