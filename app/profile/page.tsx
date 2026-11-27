@@ -1,6 +1,7 @@
 "use client";
 import { useEffect,useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft,Spade,Trophy,Gamepad2,Medal,Users,Save } from "lucide-react";
 import { ensureGuest,supabase } from "@/lib/supabase";
 
