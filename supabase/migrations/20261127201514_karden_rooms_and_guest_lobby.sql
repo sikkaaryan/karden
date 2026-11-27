@@ -1,5 +1,5 @@
 -- KARDEN fresh-project baseline snapshot.
--- Creates the current schema, game RPCs, chat and private realtime broadcasts.
+-- Current complete schema: game engine, chat and private Realtime.
 create schema if not exists karden_private;
 create table public.karden_rooms (
  id uuid primary key default gen_random_uuid(), code text not null unique, host_id uuid not null,
@@ -293,6 +293,10 @@ begin
  update public.karden_players set eliminated=true,connected=false where id=v_current.id;
  select state into v_state from karden_private.room_state where room_id=v_room.id for update;
  select coalesce(jsonb_agg(x.value),'[]'::jsonb) into v_players from jsonb_array_elements(v_state->'players') x(value) where x.value->>'playerId'<>v_current.id::text;
+ if v_state->>'pendingBy'=v_current.id::text and v_state->'pendingCard' is not null then
+   v_state:=jsonb_set(v_state,'{drawPile}',coalesce(v_state->'drawPile','[]'::jsonb)||jsonb_build_array(v_state->'pendingCard'));
+   v_state:=v_state-'pendingCard'-'pendingBy';
+ end if;
  v_state:=jsonb_set(v_state,'{players}',v_players);
  v_state:=jsonb_set(v_state,'{lastAction}',to_jsonb(v_current.display_name||' timed out and was eliminated'));
  select count(*) into v_count from public.karden_players where room_id=v_room.id and not eliminated;
@@ -366,6 +370,10 @@ begin
  else update public.karden_players set eliminated=true,connected=false where id=v_target.id; end if;
  select state into v_state from karden_private.room_state where room_id=v_room.id for update;
  select coalesce(jsonb_agg(x.value),'[]'::jsonb) into v_players from jsonb_array_elements(v_state->'players') x(value) where x.value->>'playerId'<>v_target.id::text;
+ if v_state->>'pendingBy'=v_target.id::text and v_state->'pendingCard' is not null then
+   v_state:=jsonb_set(v_state,'{drawPile}',coalesce(v_state->'drawPile','[]'::jsonb)||jsonb_build_array(v_state->'pendingCard'));
+   v_state:=v_state-'pendingCard'-'pendingBy';
+ end if;
  v_state:=jsonb_set(v_state,'{players}',v_players);
  v_state:=jsonb_set(v_state,'{lastAction}',to_jsonb(v_target.display_name||' was removed by the host'));
  select count(*) into v_count from public.karden_players where room_id=v_room.id and not eliminated;
