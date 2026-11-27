@@ -1,0 +1,2 @@
+-- Included in the KARDEN baseline snapshot at 20261127201514.
+-- No-op history marker for the existing live project.
