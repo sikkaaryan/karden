@@ -1,0 +1,3 @@
+-- This migration version was also recorded in the live Supabase project after the
+-- editable-profile migration. The SQL is idempotent and was applied by the remote
+-- migration runner; this no-op file keeps the checked-in migration history aligned.
