@@ -1,0 +1,13 @@
+import Link from "next/link";
+import { ArrowLeft,Spade } from "lucide-react";
+const sections=[
+["01 · The objective","Keep your cumulative score below the room's elimination limit. When everyone else is eliminated, the last player standing wins."],
+["02 · Your turn","At the start of your turn, check your hand total. If it is strictly below the host's call threshold, you may call instead of drawing. Otherwise, pick either the visible top discard or one face-down card."],
+["03 · Discard","After picking up, discard one or more cards from your existing hand. All cards discarded together must share the same rank. The card you just picked up cannot be discarded on that turn."],
+["04 · Card values","Ace = 1; 2–10 = face value; Jack = 11; Queen = 12; King = 13. The rank selected as Joker by the host is worth 0 and has no extra power."],
+["05 · Calling and bursting","A call ends the round immediately. If any other player's hand total is less than or equal to the caller's, the caller bursts. A clean caller adds 0; on a burst the caller adds their hand total plus the burst penalty. Everyone else adds their own hand total."],
+["06 · Elimination and next round","Players at or above the maximum cumulative score are eliminated. After a clean call, the caller starts the next round if still active. After a burst, the lowest hand among players at or below the caller's total starts; ties are random."],
+["07 · The draw pile","When the draw pile runs out, the discard pile is shuffled into a new draw pile while preserving the latest face-up discard."],
+["08 · The clock","A player who does not complete their turn before the timer expires is eliminated. The host can pause the table timer, resume it with the remaining time, remove players, or end the room."]
+];
+export default function HowToPlay(){return <main className="min-h-screen px-5 py-8 flex justify-center"><div className="w-full max-w-md"><header className="flex items-center justify-between mb-10"><Link href="/" className="secondary !p-2"><ArrowLeft size={18}/></Link><div className="flex items-center gap-2 tracking-[.25em] text-xs"><Spade size={15} className="gold"/> KARDEN</div><span className="eyebrow">Rules</span></header><p className="eyebrow mb-2">The essentials</p><h1 className="serif text-4xl gold mb-3">How to play</h1><p className="muted text-sm mb-7">A quick guide before you take your seat.</p><div className="space-y-3">{sections.map(([title,body])=><section key={title} className="panel p-4"><h2 className="text-sm gold mb-2">{title}</h2><p className="text-sm leading-6 text-[#c4c9c1]">{body}</p></section>)}</div><Link href="/" className="primary block text-center mt-7">Back to the table</Link></div></main>}
