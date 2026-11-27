@@ -20,7 +20,7 @@ export default function ProfilePage(){
  <section className="panel p-4"><div className="flex items-center gap-2 gold mb-2"><Medal size={16}/><span className="eyebrow">Losses</span></div><p className="serif text-3xl">{profile.losses}</p><p className="muted text-xs mt-1">Matches lost</p></section>
  <section className="panel p-4"><div className="flex items-center gap-2 gold mb-2"><Users size={16}/><span className="eyebrow">Draws</span></div><p className="serif text-3xl">{profile.draws}</p><p className="muted text-xs mt-1">Tied matches</p></section>
  </div>
- <p className="muted text-xs leading-5 text-center px-3">Your profile is linked to this guest session. Clearing this browser's site data may reset access to your club record.</p>
+ <p className="muted text-xs leading-5 text-center px-3">Your profile is linked to this guest session. Clearing this browser&apos;s site data may reset access to your club record.</p>
  </>}
  <Link href="/" className="primary block text-center mt-7">Back to the table</Link>
  </div></main>;
