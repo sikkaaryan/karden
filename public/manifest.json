@@ -1,0 +1,11 @@
+{
+  "name": "KARDEN — The Private Card Club",
+  "short_name": "KARDEN",
+  "description": "A private table. Your people. One more round.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090b0a",
+  "theme_color": "#090b0a",
+  "orientation": "portrait",
+  "icons": []
+}

@@ -1,0 +1,3 @@
+export type RoomConfig={maxPlayers:number;initialCards:number;decks:number;maxScore:number;burstPenalty:number;callThreshold:number;turnSeconds:number;jokerRank:string};
+export type Player={id:string;name:string;avatar:string;seat:number;score:number;eliminated:boolean;connected:boolean;cardCount:number;isHost:boolean};
+export type RoomSnapshot={roomId:string;code:string;status:"lobby"|"playing"|"paused"|"finished";config:RoomConfig;round:number;currentPlayerId:string|null;turnDeadline:string|null;players:Player[];me:{id:string;hand:{id:string;rank:string;suit:string;value:number}[]};drawCount:number;topDiscard:{id:string;rank:string;suit:string;value:number}|null;lastAction:string|null};
