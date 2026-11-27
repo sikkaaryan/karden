@@ -1,2 +1,37 @@
 @import "tailwindcss";
 :root{color-scheme:dark;--bg:#090b0a;--panel:#111512;--line:rgba(207,174,103,.19);--gold:#c9a96e;--muted:#8e948d;--felt:#123d30}*{box-sizing:border-box}html,body{min-height:100%;margin:0;background:var(--bg);color:#f1eee6}body{font-family:Arial,Helvetica,sans-serif;background:radial-gradient(ellipse at 50% -15%,#1a2a21 0%,#090b0a 58%);background-attachment:fixed}button,input,select{font:inherit}button{cursor:pointer}.serif{font-family:Georgia,"Times New Roman",serif}.gold{color:var(--gold)}.panel{background:linear-gradient(145deg,rgba(24,30,25,.96),rgba(13,17,14,.98));border:1px solid var(--line);border-radius:22px;box-shadow:0 18px 60px #0005}.field{width:100%;background:#090d0b;border:1px solid #333d34;border-radius:12px;padding:13px 14px;color:#f5f0e5;outline:none}.field:focus{border-color:var(--gold)}.label{display:block;color:#a8aea5;font-size:11px;letter-spacing:.16em;text-transform:uppercase;margin-bottom:8px}.primary{background:linear-gradient(135deg,#d7bd83,#a8874e);color:#11150f;border-radius:12px;padding:14px 18px;font-weight:700;letter-spacing:.04em;transition:filter .2s,transform .2s}.primary:active{transform:scale(.98)}.secondary{border:1px solid var(--line);border-radius:12px;padding:13px 16px;color:#e8dfcc;background:#ffffff05}.muted{color:var(--muted)}.eyebrow{font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--gold)}.playing-card{background:#f5f0e4;color:#161a16;border-radius:10px;border:1px solid #d7cfbc;box-shadow:0 8px 18px #0007}.playing-card.red{color:#a52d2b}.safe-area{padding-top:max(1.5rem,env(safe-area-inset-top));padding-bottom:max(1.5rem,env(safe-area-inset-bottom))}
+
+
+/* KARDEN — tactile, restrained game motion */
+:root{--motion-fast:160ms;--motion-base:260ms;--motion-slow:520ms;--ease-out:cubic-bezier(.2,.75,.25,1);--ease-spring:cubic-bezier(.18,.89,.32,1.22)}
+html{scroll-behavior:smooth}
+button,a,input,select{ -webkit-tap-highlight-color:transparent }
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:3px}
+button:not(:disabled){transition:transform var(--motion-fast) var(--ease-out),filter var(--motion-fast),border-color var(--motion-fast),background-color var(--motion-fast)}
+button:not(:disabled):active{transform:scale(.975)}
+.primary{box-shadow:0 5px 18px #c9a96e20,inset 0 1px #fff5}
+.primary:not(:disabled):hover{filter:brightness(1.08);box-shadow:0 8px 24px #c9a96e30,inset 0 1px #fff7}
+.secondary:hover{border-color:#c9a96e66;background:#c9a96e0d}
+.panel{animation:panel-enter .42s var(--ease-out) both}
+.playing-card{position:relative;overflow:hidden;transform-origin:50% 90%;animation:card-deal .42s var(--ease-spring) both;transition:transform .22s var(--ease-spring),box-shadow .22s,border-color .22s}
+.playing-card:before{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 25%,#fff9 48%,transparent 68%);transform:translateX(-130%);pointer-events:none}
+.playing-card:not(:disabled):hover{transform:translateY(-5px) rotate(-1deg);box-shadow:0 14px 24px #0009}
+.playing-card.selected-card{transform:translateY(-13px) scale(1.035);border-color:#c9a96e;box-shadow:0 0 0 2px #c9a96e,0 15px 30px #000b}
+.playing-card.selected-card:before{animation:card-shimmer .7s ease-out}
+.hand-fan{perspective:900px;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.table-felt{position:relative;overflow:hidden;isolation:isolate}
+.table-felt:after{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;opacity:.14;background-image:radial-gradient(#d6c49b 0.55px,transparent .7px);background-size:5px 5px;mask-image:radial-gradient(ellipse at center,#000,transparent 78%)}
+.active-seat{border-color:#d4b36e!important;background:linear-gradient(145deg,#d4b36e20,#d4b36e08)!important;box-shadow:0 0 0 1px #d4b36e45,0 0 24px #d4b36e18;animation:seat-breathe 2.4s ease-in-out infinite}
+.cardback{border:1px solid #d4b36e88;border-radius:9px;background:repeating-linear-gradient(45deg,#123a2b,#123a2b 4px,#174735 4px,#174735 8px);box-shadow:0 8px 20px #0008,inset 0 0 0 3px #0b241b,inset 0 0 0 4px #d4b36e55;transition:transform .25s var(--ease-spring)}
+.cardback:hover{transform:translateY(-4px) rotate(-2deg)}
+.discard-card{animation:discard-land .35s var(--ease-spring) both;box-shadow:0 10px 24px #0009}
+.action-panel{backdrop-filter:blur(14px)}
+.result-panel{animation:result-arrive .55s var(--ease-spring) both}
+.eyebrow{ text-wrap:balance }
+@keyframes panel-enter{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+@keyframes card-deal{from{opacity:0;transform:translateY(16px) rotate(3deg) scale(.94)}to{opacity:1;transform:translateY(0) rotate(0) scale(1)}}
+@keyframes card-shimmer{to{transform:translateX(130%)}}
+@keyframes discard-land{0%{opacity:0;transform:translateY(-15px) rotate(7deg) scale(.92)}75%{transform:translateY(2px) rotate(-1deg)}100%{opacity:1;transform:translateY(0) rotate(0) scale(1)}}
+@keyframes seat-breathe{0%,100%{box-shadow:0 0 0 1px #d4b36e35,0 0 14px #d4b36e10}50%{box-shadow:0 0 0 1px #d4b36e75,0 0 25px #d4b36e25}}
+@keyframes result-arrive{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
