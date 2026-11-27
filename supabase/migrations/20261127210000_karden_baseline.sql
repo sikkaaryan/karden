@@ -22,8 +22,10 @@ alter table public.karden_players enable row level security;
 alter table karden_private.room_state enable row level security;
 revoke all on public.karden_rooms,public.karden_players from anon,authenticated;
 revoke all on karden_private.room_state from anon,authenticated;
+revoke all on schema karden_private from public,anon;
+grant usage on schema karden_private to authenticated;
 
-CREATE OR REPLACE FUNCTION public.karden_call(p_code text)
+CREATE OR REPLACE FUNCTION karden_private.karden_call(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -39,6 +41,7 @@ begin
  if not found or v_room.status<>'playing' then raise exception 'Game is not active'; end if;
  select * into v_me from public.karden_players where room_id=v_room.id and user_id=auth.uid() and not eliminated;
  if not found or v_me.id<>v_room.current_player_id then raise exception 'It is not your turn'; end if;
+  if v_room.turn_deadline is not null and now()>=v_room.turn_deadline then raise exception 'Turn has expired'; end if;
  select state into v_state from karden_private.room_state where room_id=v_room.id for update;
  if coalesce(v_state->>'phase','playing')<>'playing' or v_state->>'pendingBy' is not null then raise exception 'You cannot call now'; end if;
  select coalesce((x.value->>'total')::integer,0) into v_caller_total from jsonb_array_elements(v_state->'players') x(value) where x.value->>'playerId'=v_me.id::text;
@@ -73,10 +76,9 @@ begin
  return v_result;
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_call(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_call(text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_create_room(p_name text, p_avatar text, p_config jsonb)
+revoke all on function karden_private.karden_call(text) from public,anon;
+grant execute on function karden_private.karden_call(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_create_room(p_name text, p_avatar text, p_config jsonb)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -95,6 +97,7 @@ begin
  or coalesce((p_config->>'callThreshold')::integer,10) not between 1 and 100
  or coalesce((p_config->>'turnSeconds')::integer,60) not between 15 and 180
  then raise exception 'Invalid room settings'; end if;
+ if coalesce(p_config->>'jokerRank','J') not in ('A','2','3','4','5','6','7','8','9','10','J','Q','K') then raise exception 'Invalid Joker rank'; end if;
  loop
    v_code:=upper(substr(md5(random()::text||clock_timestamp()::text),1,6));
    exit when not exists(select 1 from public.karden_rooms where code=v_code);
@@ -109,10 +112,9 @@ begin
  return jsonb_build_object('roomId',v_room.id,'code',v_room.code,'playerId',v_player.id);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_create_room(text,text,jsonb) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_create_room(text,text,jsonb) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_discard_cards(p_code text, p_card_ids uuid[])
+revoke all on function karden_private.karden_create_room(text,text,jsonb) from public,anon;
+grant execute on function karden_private.karden_create_room(text,text,jsonb) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_discard_cards(p_code text, p_card_ids uuid[])
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -140,6 +142,7 @@ begin
   if not found or v_room.status<>'playing' then raise exception 'Game is not active'; end if;
   select * into v_me from public.karden_players where room_id=v_room.id and user_id=auth.uid() and not eliminated;
   if not found or v_me.id<>v_room.current_player_id then raise exception 'It is not your turn'; end if;
+  if v_room.turn_deadline is not null and now()>=v_room.turn_deadline then raise exception 'Turn has expired'; end if;
   select state into v_state from karden_private.room_state where room_id=v_room.id for update;
   if v_state->>'pendingBy' is distinct from v_me.id::text then raise exception 'Pick a card before discarding'; end if;
   v_players:=v_state->'players';
@@ -173,10 +176,9 @@ begin
   return jsonb_build_object('discarded',cardinality(p_card_ids),'nextPlayerId',v_next);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_discard_cards(text,uuid[]) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_discard_cards(text,uuid[]) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_end_room(p_code text)
+revoke all on function karden_private.karden_discard_cards(text,uuid[]) from public,anon;
+grant execute on function karden_private.karden_discard_cards(text,uuid[]) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_end_room(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -195,10 +197,9 @@ begin
  return jsonb_build_object('ended',true);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_end_room(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_end_room(text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_expire_turn(p_code text)
+revoke all on function karden_private.karden_end_room(text) from public,anon;
+grant execute on function karden_private.karden_end_room(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_expire_turn(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -233,10 +234,9 @@ begin
  return jsonb_build_object('expired',true,'eliminatedPlayerId',v_current.id,'winnerId',case when v_count=1 then v_next else null end);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_expire_turn(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_expire_turn(text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_join_room(p_code text, p_name text, p_avatar text)
+revoke all on function karden_private.karden_expire_turn(text) from public,anon;
+grant execute on function karden_private.karden_expire_turn(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_join_room(p_code text, p_name text, p_avatar text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -271,10 +271,9 @@ begin
   return jsonb_build_object('roomId',v_room.id,'code',v_room.code,'playerId',v_player.id);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_join_room(text,text,text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_join_room(text,text,text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_kick_player(p_code text, p_player_id uuid)
+revoke all on function karden_private.karden_join_room(text,text,text) from public,anon;
+grant execute on function karden_private.karden_join_room(text,text,text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_kick_player(p_code text, p_player_id uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -306,10 +305,9 @@ begin
  return jsonb_build_object('removed',true,'playerId',v_target.id);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_kick_player(text,uuid) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_kick_player(text,uuid) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_next_round(p_code text)
+revoke all on function karden_private.karden_kick_player(text,uuid) from public,anon;
+grant execute on function karden_private.karden_kick_player(text,uuid) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_next_round(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -358,30 +356,30 @@ begin
   return jsonb_build_object('round',v_room.round_number+1,'startingPlayerId',v_start);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_next_round(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_next_round(text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_pause_room(p_code text)
+revoke all on function karden_private.karden_next_round(text) from public,anon;
+grant execute on function karden_private.karden_next_round(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_pause_room(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
 AS $function$
-declare v_room public.karden_rooms; v_remaining integer;
+declare v_room public.karden_rooms; v_remaining integer; v_state jsonb;
 begin
  if auth.uid() is null then raise exception 'Guest session required'; end if;
  select * into v_room from public.karden_rooms where code=upper(trim(p_code)) for update;
  if not found or v_room.host_id<>auth.uid() then raise exception 'Only the host can pause the room'; end if;
  if v_room.status<>'playing' then raise exception 'Room is not currently running'; end if;
+ select state into v_state from karden_private.room_state where room_id=v_room.id;
+ if coalesce(v_state->>'phase','playing')<>'playing' then raise exception 'A round result cannot be paused'; end if;
  v_remaining:=greatest(0,ceil(extract(epoch from (v_room.turn_deadline-now())))::integer);
  update public.karden_rooms set status='paused',remaining_seconds=v_remaining,turn_deadline=null,updated_at=now() where id=v_room.id;
  return jsonb_build_object('paused',true,'remainingSeconds',v_remaining);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_pause_room(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_pause_room(text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_resume_room(p_code text)
+revoke all on function karden_private.karden_pause_room(text) from public,anon;
+grant execute on function karden_private.karden_pause_room(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_resume_room(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -398,10 +396,9 @@ begin
  return jsonb_build_object('resumed',true);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_resume_room(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_resume_room(text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_room_snapshot(p_code text)
+revoke all on function karden_private.karden_resume_room(text) from public,anon;
+grant execute on function karden_private.karden_resume_room(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_room_snapshot(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -438,10 +435,9 @@ begin
   );
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_room_snapshot(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_room_snapshot(text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_start_game(p_code text)
+revoke all on function karden_private.karden_room_snapshot(text) from public,anon;
+grant execute on function karden_private.karden_room_snapshot(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_start_game(p_code text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -522,10 +518,9 @@ begin
   return jsonb_build_object('started',true,'round',1,'currentPlayerId',v_start);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_start_game(text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_start_game(text) TO authenticated;
-
-CREATE OR REPLACE FUNCTION public.karden_take_card(p_code text, p_source text)
+revoke all on function karden_private.karden_start_game(text) from public,anon;
+grant execute on function karden_private.karden_start_game(text) to authenticated;
+CREATE OR REPLACE FUNCTION karden_private.karden_take_card(p_code text, p_source text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -544,6 +539,7 @@ begin
   if not found or v_room.status<>'playing' then raise exception 'Game is not active'; end if;
   select * into v_me from public.karden_players where room_id=v_room.id and user_id=auth.uid() and not eliminated;
   if not found or v_me.id<>v_room.current_player_id then raise exception 'It is not your turn'; end if;
+  if v_room.turn_deadline is not null and now()>=v_room.turn_deadline then raise exception 'Turn has expired'; end if;
   select state into v_state from karden_private.room_state where room_id=v_room.id for update;
   if v_state->>'pendingBy' is not null then raise exception 'You already picked a card'; end if;
   if p_source='open' then
@@ -570,5 +566,109 @@ begin
   return jsonb_build_object('picked',true);
 end $function$
 ;
-REVOKE ALL ON FUNCTION public.karden_take_card(text,text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.karden_take_card(text,text) TO authenticated;
+revoke all on function karden_private.karden_take_card(text,text) from public,anon;
+grant execute on function karden_private.karden_take_card(text,text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_call(p_code text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_call($1); $function$
+;
+revoke all on function public.karden_call(text) from public,anon;
+grant execute on function public.karden_call(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_create_room(p_name text, p_avatar text, p_config jsonb)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_create_room($1,$2,$3); $function$
+;
+revoke all on function public.karden_create_room(text,text,jsonb) from public,anon;
+grant execute on function public.karden_create_room(text,text,jsonb) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_discard_cards(p_code text, p_card_ids uuid[])
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_discard_cards($1,$2); $function$
+;
+revoke all on function public.karden_discard_cards(text,uuid[]) from public,anon;
+grant execute on function public.karden_discard_cards(text,uuid[]) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_end_room(p_code text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_end_room($1); $function$
+;
+revoke all on function public.karden_end_room(text) from public,anon;
+grant execute on function public.karden_end_room(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_expire_turn(p_code text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_expire_turn($1); $function$
+;
+revoke all on function public.karden_expire_turn(text) from public,anon;
+grant execute on function public.karden_expire_turn(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_join_room(p_code text, p_name text, p_avatar text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_join_room($1,$2,$3); $function$
+;
+revoke all on function public.karden_join_room(text,text,text) from public,anon;
+grant execute on function public.karden_join_room(text,text,text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_kick_player(p_code text, p_player_id uuid)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_kick_player($1,$2); $function$
+;
+revoke all on function public.karden_kick_player(text,uuid) from public,anon;
+grant execute on function public.karden_kick_player(text,uuid) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_next_round(p_code text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_next_round($1); $function$
+;
+revoke all on function public.karden_next_round(text) from public,anon;
+grant execute on function public.karden_next_round(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_pause_room(p_code text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_pause_room($1); $function$
+;
+revoke all on function public.karden_pause_room(text) from public,anon;
+grant execute on function public.karden_pause_room(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_resume_room(p_code text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_resume_room($1); $function$
+;
+revoke all on function public.karden_resume_room(text) from public,anon;
+grant execute on function public.karden_resume_room(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_room_snapshot(p_code text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_room_snapshot($1); $function$
+;
+revoke all on function public.karden_room_snapshot(text) from public,anon;
+grant execute on function public.karden_room_snapshot(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_start_game(p_code text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_start_game($1); $function$
+;
+revoke all on function public.karden_start_game(text) from public,anon;
+grant execute on function public.karden_start_game(text) to authenticated;
+CREATE OR REPLACE FUNCTION public.karden_take_card(p_code text, p_source text)
+ RETURNS jsonb
+ LANGUAGE sql
+ SET search_path TO ''
+AS $function$ select karden_private.karden_take_card($1,$2); $function$
+;
+revoke all on function public.karden_take_card(text,text) from public,anon;
+grant execute on function public.karden_take_card(text,text) to authenticated;
