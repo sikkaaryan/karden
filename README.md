@@ -26,7 +26,7 @@ A portrait-first, dark-luxury multiplayer card game PWA.
 - Never put a Supabase secret/service-role key in browser code.
 
 ## Database
-`supabase/migrations` contains a fresh-project baseline snapshot plus history markers matching the already-deployed project migrations. The live KARDEN database has the baseline schema, game engine, chat, and private Realtime triggers applied.
+`supabase/migrations` contains a fresh-project baseline snapshot plus history markers matching the already-deployed project migrations. The live KARDEN database has the baseline schema, game engine, chat, private Realtime triggers, secure avatar storage, and profile/statistics migrations applied.
 
 ## Current features
 - Guest room creation/joining and host-configurable rules
@@ -34,4 +34,6 @@ A portrait-first, dark-luxury multiplayer card game PWA.
 - Elimination, round progression, timeout removal and winner/tie states
 - Host pause/resume, kick and end-room controls
 - Private room broadcasts, table chat and quick reactions
-- Portrait PWA shell and How to Play guide
+- Portrait PWA shell, How to Play guide, and persistent guest profile/statistics
+- Optional personal photo avatars stored in a dedicated, size/type-limited Supabase Storage bucket
+- Host rematch flow that carries forward the previous room settings
