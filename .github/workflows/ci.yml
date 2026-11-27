@@ -13,6 +13,10 @@ jobs:
         with:
           node-version: 22
       - run: npm install
+      - name: Report dependency vulnerabilities
+        run: |
+          npm audit --json > /tmp/karden-audit.json || true
+          node -e 'const a=require("/tmp/karden-audit.json"); console.log("Vulnerability summary:", JSON.stringify(a.metadata?.vulnerabilities)); for (const [name,v] of Object.entries(a.vulnerabilities ?? {})) console.log(`${name}: ${v.severity}; direct=${v.isDirect}; fix=${JSON.stringify(v.fixAvailable)}`)'
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
