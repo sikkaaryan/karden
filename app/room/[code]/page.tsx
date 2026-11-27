@@ -1,7 +1,7 @@
 "use client";
 import { useCallback,useEffect,useMemo,useState } from "react";
 import { useParams,useRouter } from "next/navigation";
-import { ArrowLeft,Copy,Crown,Shield,Users,Clock,Layers,Spade,Heart,Diamond,MessageCircle,Send } from "lucide-react";
+import { ArrowLeft,Copy,Crown,Shield,Users,Clock,Layers,MessageCircle,Send } from "lucide-react";
 import { ensureGuest,supabase } from "@/lib/supabase";
 import type { Card,RoomSnapshot } from "@/lib/types";
 
