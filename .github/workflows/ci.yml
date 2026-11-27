@@ -17,6 +17,7 @@ jobs:
         run: |
           npm audit --json > /tmp/karden-audit.json || true
           node -e 'const a=require("/tmp/karden-audit.json"); console.log("Vulnerability summary:", JSON.stringify(a.metadata?.vulnerabilities)); for (const [name,v] of Object.entries(a.vulnerabilities ?? {})) console.log(`${name}: ${JSON.stringify({severity:v.severity,range:v.range,via:v.via,fixAvailable:v.fixAvailable})}`)'
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - run: npm run typecheck
       - run: npm run build
