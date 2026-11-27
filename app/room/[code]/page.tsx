@@ -19,7 +19,7 @@ export default function Room(){
  const sameRank=selectedCards.length===0||selectedCards.every(c=>c.rank===selectedCards[0].rank);
  async function action(fn:string,args:Record<string,unknown>={}){setBusy(true);setError("");try{const {error}=await supabase().rpc(fn,{p_code:code,...args});if(error)throw error;setSelected([]);await refresh()}catch(e){setError(e instanceof Error?e.message:"Action failed")}finally{setBusy(false)}}
  async function copy(){await navigator.clipboard.writeText(`${location.origin}/room/${code}`)}
- async function sendChat(body:string,kind:"text"|"reaction"){if(!body.trim())return;await action("karden_send_message",{p_body:body,p_kind:kind});if(kind==="text")setChatText("");}
+ async function sendChat(body:string,kind:"text"|"reaction"){if(!body.trim())return;setBusy(true);setError("");try{const {error}=await supabase().rpc("karden_send_message",{p_code:code,p_body:body,p_kind:kind});if(error)throw error;if(kind==="text")setChatText("");await refresh()}catch(e){setError(e instanceof Error?e.message:"Could not send message")}finally{setBusy(false)}}
  function toggle(id:string){setSelected(s=>s.includes(id)?s.filter(x=>x!==id):[...s,id])}
  if(loading)return <main className="min-h-screen grid place-items-center muted text-sm">Opening your private table…</main>;
  return <main className="min-h-screen px-4 py-6 flex justify-center safe-area"><div className="w-full max-w-md">
