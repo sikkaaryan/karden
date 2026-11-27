@@ -21,6 +21,8 @@ create table public.karden_messages (
  body text not null check(char_length(body) between 1 and 240), kind text not null check(kind in ('text','reaction')),
  created_at timestamptz not null default now()
 );
+create index karden_messages_room_created_idx on public.karden_messages(room_id,created_at desc);
+create index karden_messages_player_idx on public.karden_messages(player_id);
 create table karden_private.room_state (
  room_id uuid primary key references public.karden_rooms(id) on delete cascade,
  state jsonb not null default '{}'::jsonb, updated_at timestamptz not null default now()
