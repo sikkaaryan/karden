@@ -1,6 +1,9 @@
 "use client";
 export const DEFAULT_AVATAR="character-01";
 export const CHARACTER_AVATARS=Array.from({length:8},(_,i)=>`character-${String(i+1).padStart(2,"0")}`);
+const STORED_AVATARS=["ace","♠","♥","♦","♣","🦊","🐺","🦅"];
+export function toStoredAvatar(avatar:string){const index=CHARACTER_AVATARS.indexOf(avatar);return index>=0?STORED_AVATARS[index]:avatar;}
+export function toCharacterAvatar(avatar:string){if(avatar.startsWith("https://"))return avatar;const characterIndex=CHARACTER_AVATARS.indexOf(avatar);if(characterIndex>=0)return avatar;const storedIndex=STORED_AVATARS.indexOf(avatar);return storedIndex>=0?CHARACTER_AVATARS[storedIndex]:DEFAULT_AVATAR;}
 
 const looks=[
  {skin:"#D99B72",hair:"#24201F",shirt:"#B58A50",hairPath:"M18 29Q18 8 40 8Q62 8 62 31L57 27Q53 18 40 19Q26 18 23 31Z"},
