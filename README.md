@@ -33,7 +33,9 @@ A portrait-first, dark-luxury multiplayer card game PWA.
 - Random dealing, turn flow, pickup, same-rank discard, calling and burst scoring
 - Elimination, round progression, timeout removal and winner/tie states
 - Host pause/resume, kick and end-room controls
-- Private room broadcasts, table chat and quick reactions
+- Private room broadcasts, table chat, quick reactions, and heartbeat-based online/disconnected status
 - Portrait PWA shell, How to Play guide, and persistent guest profile/statistics
 - Optional personal photo avatars stored in a dedicated, size/type-limited Supabase Storage bucket
 - Host rematch flow that carries forward the previous room settings
+- Touch-friendly tap/long-press card selection and subtle card-only sound effects
+- Independent release test matrix and specialist agent instructions in `QA_PLAN.md`
