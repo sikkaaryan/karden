@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 export const DEFAULT_AVATAR="character-01";
 export const CHARACTER_AVATARS=Array.from({length:8},(_,i)=>`character-${String(i+1).padStart(2,"0")}`);
 const STORED_AVATARS=["ace","♠","♥","♦","♣","🦊","🐺","🦅"];
@@ -17,7 +18,7 @@ const looks=[
 ];
 
 export function CharacterAvatar({avatar=DEFAULT_AVATAR,name="Player",size=44,className=""}:{avatar?:string;name?:string;size?:number;className?:string}){
- if(avatar.startsWith("https://"))return <img src={avatar} alt={`${name} avatar`} width={size} height={size} className={`rounded-full object-cover ${className}`}/>;
+ if(avatar.startsWith("https://"))return <Image src={avatar} alt={`${name} avatar`} width={size} height={size} unoptimized className={`rounded-full object-cover ${className}`}/>;
  const index=Number(avatar.match(/character-(\d+)/)?.[1]??1)-1;
  const look=looks[((index%looks.length)+looks.length)%looks.length];
  return <svg role="img" aria-label={`${name} character avatar`} width={size} height={size} viewBox="0 0 80 80" className={className} style={{flexShrink:0}}>
