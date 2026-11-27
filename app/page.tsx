@@ -1,6 +1,7 @@
 "use client";
 import { useEffect,useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { ArrowUpRight, Crown, Shield, Spade } from "lucide-react";
 import { ensureGuest,supabase } from "@/lib/supabase";
 import type { RoomConfig } from "@/lib/types";
