@@ -193,3 +193,23 @@ button:not(:disabled):active{transform:scale(.975)}
   .karden-room .self-seat{width:100px}
   .karden-room .hand-fan{padding:2px!important}
 }
+
+
+/* Keep the local player's full seat and card count inside the felt table */
+.karden-room .karden-table{
+  padding-bottom:clamp(24px,3.2vh,34px)!important;
+}
+.karden-room .self-seat{
+  position:relative;
+  z-index:2;
+  margin-bottom:4px;
+  transform:translateY(-8px);
+}
+@media(max-height:740px){
+  .karden-room .karden-table{padding-bottom:22px!important}
+  .karden-room .self-seat{margin-bottom:2px;transform:translateY(-10px)}
+}
+@media(max-height:650px){
+  .karden-room .karden-table{padding-bottom:18px!important}
+  .karden-room .self-seat{transform:translateY(-6px)}
+}
