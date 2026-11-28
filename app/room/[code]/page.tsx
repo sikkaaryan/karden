@@ -92,6 +92,7 @@ export default function Room() {
   const [showScores, setShowScores] = useState(false);
   const [showHostTools, setShowHostTools] = useState(false);
   const [showChat, setShowChat] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [chatText, setChatText] = useState("");
   const expiredDeadline = useRef<string | null>(null);
   const refresh = useCallback(async () => {
@@ -193,15 +194,37 @@ export default function Room() {
         p_config: room.config,
       });
       if (error) throw error;
-      router.push(`/room/${data.code}`);
+      const nextCode = typeof data?.code === "string" ? data.code : "";
+      if (!nextCode) throw new Error("The new room was created, but its code was not returned. Please try again.");
+      router.push(`/room/${nextCode}`);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not start a rematch.");
+      setError(e instanceof Error ? e.message : "Could not start a rematch. Please check your connection and try again.");
     } finally {
       setBusy(false);
     }
   }
   async function copy() {
-    await navigator.clipboard.writeText(`${location.origin}/room/${code}`);
+    const invite = `${window.location.origin}/room/${code}`;
+    try {
+      if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(invite);
+      } else {
+        const field = document.createElement("textarea");
+        field.value = invite;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.appendChild(field);
+        field.select();
+        const copied = document.execCommand("copy");
+        field.remove();
+        if (!copied) throw new Error("Clipboard access is unavailable. Copy this link manually: " + invite);
+      }
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2200);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : `Could not copy the invite link: ${invite}`);
+    }
   }
   async function sendChat(body: string, kind: "text" | "reaction") {
     if (!body.trim()) return;
@@ -241,7 +264,7 @@ export default function Room() {
               <MessageCircle size={16} />
             </button>
             <button className="secondary !p-2 text-xs gold" onClick={() => void copy()}>
-              <Copy size={15} />
+              {copied ? <span className="text-[11px]">Copied!</span> : <Copy size={15} />
             </button>
           </div>
         </header>
@@ -351,7 +374,7 @@ export default function Room() {
                     </div>
                     {me?.isHost && (
                       <button disabled={busy} onClick={() => void rematch()} className="primary w-full mt-5 disabled:opacity-40">
-                        {busy ? "Opening new table…" : "Rematch · Same settings"}
+                        {busy ? "Opening new table…" : "Rematch · New room, same settings"}
                       </button>
                     )}
                     <button onClick={() => router.push("/")} className="secondary w-full mt-2">
@@ -406,7 +429,7 @@ export default function Room() {
                     )}
                     {room.status === "finished" && me?.isHost && (
                       <button disabled={busy} onClick={() => void rematch()} className="primary w-full mt-4 disabled:opacity-40">
-                        {busy ? "Opening new table…" : "Rematch · Same settings"}
+                        {busy ? "Opening new table…" : "Rematch · New room, same settings"}
                       </button>
                     )}
                   </section>
@@ -417,11 +440,11 @@ export default function Room() {
                         ROUND <b className="text-white">{room.round}</b>
                       </div>
                       <div className="flex gap-2">
-                        <button onClick={() => setShowScores((v) => !v)} className="secondary text-xs">
+                        <button onClick={() => { setShowHostTools(false); setShowScores((v) => !v); }} className="secondary text-xs">
                           Scoreboard
                         </button>
                         {me?.isHost && (
-                          <button onClick={() => setShowHostTools((v) => !v)} className="secondary text-xs gold">
+                          <button onClick={() => { setShowScores(false); setShowHostTools((v) => !v); }} className="secondary text-xs gold">
                             Host
                           </button>
                         )}
@@ -612,7 +635,7 @@ export default function Room() {
               </section>
             )}
             {showScores && (
-              <section className="panel p-4 mt-4">
+              <section role="dialog" aria-modal="true" aria-label="Scoreboard" className="panel fixed inset-x-4 bottom-4 z-50 mx-auto max-w-lg p-4 max-h-[70dvh] overflow-y-auto shadow-2xl">
                 <div className="flex justify-between mb-3">
                   <p className="eyebrow">Cumulative scores</p>
                   <button onClick={() => setShowScores(false)} className="muted text-xs">
@@ -636,7 +659,7 @@ export default function Room() {
               </section>
             )}
             {showHostTools && me?.isHost && (
-              <section className="panel p-4 mt-4">
+              <section role="dialog" aria-modal="true" aria-label="Host controls" className="panel fixed inset-x-4 bottom-4 z-50 mx-auto max-w-lg p-4 max-h-[70dvh] overflow-y-auto shadow-2xl">
                 <div className="flex justify-between items-center mb-3">
                   <p className="eyebrow">Host controls</p>
                   <button onClick={() => setShowHostTools(false)} className="muted text-xs">
