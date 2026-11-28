@@ -79,3 +79,94 @@ button:not(:disabled):active{transform:scale(.975)}
 @media(max-width:390px){.karden-table{min-height:535px;padding-inline:8px}.table-players{gap:7px 3px}.seat-avatar{width:43px;height:43px}.seat-name{font-size:11px}.table-deck,.table-open-card{width:56px;height:80px}.table-piles{gap:16px}.action-buttons{gap:5px}.lounge-action{font-size:12px}}
 .playing-card{background-color:#f5f0e4;background-image:radial-gradient(#9c8d7130 .55px,transparent .8px),linear-gradient(135deg,#fff8,#e8dfcc55);background-size:4px 4px,100% 100%;border-color:#d8cdb7;box-shadow:0 9px 18px #0008,inset 0 1px #fff,inset 0 0 0 1px #e4dac6}
 .playing-card:after{content:"";position:absolute;inset:4px;border:1px solid #c7b99e88;border-radius:6px;pointer-events:none}
+
+/* App-like game viewport: keep the complete table visible without page scrolling */
+.karden-room{
+  height:100dvh;
+  min-height:0!important;
+  overflow:hidden;
+  padding-top:max(6px,env(safe-area-inset-top))!important;
+  padding-bottom:max(6px,env(safe-area-inset-bottom))!important;
+}
+.karden-room>div:has(.karden-table){
+  height:100%;
+  min-height:0;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.karden-room>div:has(.karden-table)>header{
+  flex:0 0 auto;
+  margin-bottom:6px!important;
+  padding:3px 8px 7px!important;
+}
+.karden-room>div:has(.karden-table)>.text-center.mb-5{
+  flex:0 0 auto;
+  margin-bottom:6px!important;
+}
+.karden-room>div:has(.karden-table)>.text-center.mb-5 h1{
+  font-size:clamp(20px,3.2vh,28px);
+  line-height:1.05;
+}
+.karden-room>div:has(.karden-table)>.flex.items-center.justify-between.mb-4{
+  flex:0 0 auto;
+  margin-bottom:6px!important;
+}
+.karden-table{
+  flex:1 1 auto;
+  min-height:260px!important;
+  height:auto!important;
+  max-height:570px;
+  gap:clamp(4px,1vh,12px);
+  padding:clamp(6px,1.4vh,15px) 10px!important;
+}
+.karden-room>div:has(.karden-table)>.mt-4{
+  flex:0 0 auto;
+  margin-top:5px!important;
+}
+.karden-room .hand-fan{
+  padding-top:4px!important;
+  padding-bottom:4px!important;
+  max-width:100%;
+  justify-content:flex-start!important;
+  scrollbar-width:none;
+}
+.karden-room .hand-fan::-webkit-scrollbar{display:none}
+.karden-room .table-actions{
+  flex:0 0 auto;
+  margin-top:5px!important;
+  padding:6px 8px 7px!important;
+}
+.karden-room .action-hint{margin-bottom:5px!important;font-size:9px}
+.karden-room .lounge-action{min-height:38px;padding:5px 4px}
+.karden-room>div:has(.karden-table)>p:last-child{display:none}
+@media(max-height:760px){
+  .karden-room>div:has(.karden-table)>header{padding-bottom:4px!important}
+  .karden-room .karden-table{min-height:245px!important;padding:5px 8px!important;border-width:6px}
+  .karden-room .table-players{gap:4px 3px}
+  .karden-room .seat-avatar{width:38px;height:38px}
+  .karden-room .seat-name{font-size:10px;margin-top:2px}
+  .karden-room .seat-score{font-size:10px;margin-top:0}
+  .karden-room .seat-cards{height:13px;margin-top:1px}
+  .karden-room .mini-cardback{height:13px;width:9px}
+  .karden-room .table-piles{margin:2px 0 4px;gap:14px}
+  .karden-room .table-deck,.karden-room .table-open-card{width:48px;height:68px;padding:5px;font-size:18px}
+  .karden-room .table-open-card span{font-size:23px}
+  .karden-room .turn-pill{min-width:160px;padding:5px 15px;font-size:14px}
+  .karden-room .call-cta{padding:7px 14px;font-size:19px}
+  .karden-room .call-placeholder{height:30px}
+  .karden-room .self-seat{width:120px;padding:4px 6px}
+  .karden-room .self-seat .seat-avatar{width:44px;height:44px}
+  .karden-room .playing-card{width:44px;height:66px;padding:5px}
+  .karden-room .table-actions{padding:5px 7px!important}
+  .karden-room .lounge-action{min-height:34px;font-size:11px}
+}
+@media(max-height:680px){
+  .karden-room .karden-table{min-height:220px!important}
+  .karden-room .table-players{gap:2px}
+  .karden-room .seat-avatar{width:34px;height:34px}
+  .karden-room .table-center{gap:4px}
+  .karden-room .table-piles{margin:0 0 2px}
+  .karden-room .self-seat .seat-avatar{width:40px;height:40px}
+  .karden-room .playing-card{width:40px;height:60px}
+}
