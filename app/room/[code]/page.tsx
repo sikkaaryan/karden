@@ -264,7 +264,7 @@ export default function Room() {
               <MessageCircle size={16} />
             </button>
             <button className="secondary !p-2 text-xs gold" onClick={() => void copy()}>
-              {copied ? <span className="text-[11px]">Copied!</span> : <Copy size={15} />
+              {copied ? <span className="text-[11px]">Copied!</span> : <Copy size={15} />}
             </button>
           </div>
         </header>
