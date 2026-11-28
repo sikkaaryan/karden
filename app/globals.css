@@ -35,3 +35,47 @@ button:not(:disabled):active{transform:scale(.975)}
 @keyframes seat-breathe{0%,100%{box-shadow:0 0 0 1px #d4b36e35,0 0 14px #d4b36e10}50%{box-shadow:0 0 0 1px #d4b36e75,0 0 25px #d4b36e25}}
 @keyframes result-arrive{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+/* KARDEN cinematic private-club table */
+.karden-room{background:radial-gradient(ellipse at 50% 8%,#51351f 0%,#21170f 32%,#090a08 78%);background-attachment:fixed}
+.karden-brand{display:flex;flex-direction:column;align-items:center;gap:0;font-size:20px;letter-spacing:.24em;color:#e7d4a6;text-shadow:0 2px 14px #d3a34c55}
+.brand-spade{font-size:25px;line-height:1;color:#d9b66e}
+.karden-room header{padding:7px 10px 14px;border-bottom:1px solid #c6a36335}
+.karden-room .secondary{background:linear-gradient(145deg,#211a13,#0b0b09);border-color:#b9975a66;box-shadow:inset 0 1px #fff2,0 5px 16px #0007}
+.karden-table{position:relative;isolation:isolate;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-height:570px;padding:18px 12px 15px;border:9px solid #53331e;border-radius:48% / 15%;background:radial-gradient(ellipse at 50% 45%,#15513b 0%,#0d392b 58%,#08251c 100%);box-shadow:inset 0 0 0 2px #d4b36e,inset 0 0 0 7px #24180f,inset 0 0 55px #000a,0 16px 34px #000b,0 0 0 2px #b98d4d55}
+.karden-table:before{content:"";position:absolute;inset:12px;border:1px solid #d0b47735;border-radius:48% / 16%;pointer-events:none;z-index:-1}
+.table-players{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px 5px;align-items:start}
+.table-seat,.self-seat{position:relative;display:flex;flex-direction:column;align-items:center;min-width:0;text-align:center;padding:5px 3px;border:1px solid #c5a26355;border-radius:18px;background:linear-gradient(145deg,#17130fe8,#080907e8);box-shadow:0 5px 14px #0008}
+.seat-avatar{position:relative;width:50px;height:50px;border-radius:50%;padding:2px;background:linear-gradient(145deg,#f1d38b,#765126);box-shadow:0 0 0 2px #21170f,0 3px 10px #0008}
+.seat-avatar img,.seat-avatar svg{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.seat-crown{position:absolute;right:-4px;top:-4px;width:19px;height:19px;display:grid;place-items:center;border-radius:50%;background:#bd954d;color:#21170f;border:1px solid #f4dca3}
+.seat-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:600 12px Georgia,serif;color:#f0e6d1;margin-top:4px}
+.seat-score{font:700 12px Georgia,serif;color:#e6bd6d;margin-top:2px}
+.seat-cards{height:19px;display:flex;justify-content:center;margin-top:4px;padding-left:5px}
+.mini-cardback{display:block;width:12px;height:18px;margin-left:-5px;border:1px solid #c6a15d;border-radius:3px;background:repeating-linear-gradient(45deg,#101a16,#101a16 2px,#284333 2px,#284333 4px);box-shadow:0 2px 3px #0008}
+.active-seat{border-color:#e5c477!important;box-shadow:0 0 0 1px #d8b86e,0 0 20px #d8b86e55!important}
+.table-center{display:flex;flex-direction:column;align-items:center;gap:10px;margin:auto 0;padding:4px 0}
+.table-piles{display:flex;align-items:center;justify-content:center;gap:22px;margin:5px 0 8px}
+.pile-wrap{display:flex;flex-direction:column;align-items:center;gap:6px}
+.table-deck,.table-open-card{width:62px;height:88px;border-radius:8px;display:flex;flex-direction:column;justify-content:space-between;padding:8px;font:700 22px Georgia,serif}
+.table-deck{align-items:center;justify-content:center;color:#d8b66e;font-size:28px;border:1px solid #d7b96f;background:repeating-linear-gradient(45deg,#17130f,#17130f 4px,#282017 4px,#282017 8px);box-shadow:0 7px 0 #654528,0 11px 18px #0009,inset 0 0 0 3px #17100b,inset 0 0 0 4px #d4b36e88}
+.table-open-card{border:1px solid #e3d7bd;background:#f5efdf;box-shadow:0 7px 0 #9a8664,0 11px 18px #0009;text-align:left}
+.table-open-card span{align-self:center;font-size:29px}.table-open-card.red{color:#a52d2b}
+.empty-pile{border:1px dashed #d4b36e55;background:#0002}.pile-caption{font-size:9px;letter-spacing:.14em;color:#d7c59e}
+.turn-pill{min-width:190px;display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 22px;border:1px solid #d8bd78;border-radius:30px;background:linear-gradient(145deg,#10291f,#07150f);box-shadow:0 0 0 2px #d2ad5b20,0 5px 18px #0008;color:#f1d38b;font:600 17px Georgia,serif}
+.turn-pill b{display:flex;align-items:center;gap:6px;font:500 14px Arial,sans-serif;color:#f5eee0}
+.turn-urgent{border-color:#e58a65;color:#ffb38c;animation:seat-breathe 1.2s infinite}
+.call-cta{width:min(78%,245px);padding:11px 18px;border:1px solid #f4d98d;border-radius:999px;background:linear-gradient(180deg,#f3d37f 0%,#c18b35 55%,#9a6726 100%);box-shadow:0 4px 0 #65421d,0 9px 22px #0009,inset 0 1px #fff9;color:#21170d;font:700 23px Georgia,serif;letter-spacing:.06em;text-shadow:0 1px #fff5}
+.call-cta span{margin-right:9px}.call-cta:disabled{opacity:.55;filter:grayscale(.35)}
+.call-placeholder{height:43px;display:grid;place-items:center;color:#d4bd86;font:italic 12px Georgia,serif}
+.call-hint{margin:0;color:#d9caa7;font:italic 10px Georgia,serif;text-align:center}
+.self-seat{align-self:center;width:145px;padding:6px 8px;border-radius:22px;background:linear-gradient(145deg,#20160f,#090907);border-color:#d6b66c88}
+.self-seat .seat-avatar{width:60px;height:60px}.self-seat-active{box-shadow:0 0 0 2px #e0bd70,0 0 25px #d4ad5d66}
+.table-actions{margin-top:8px;padding:10px 9px 12px;border:1px solid #b8915266;border-radius:19px;background:linear-gradient(145deg,#1b1711,#080908);box-shadow:0 8px 22px #0008}
+.action-hint{text-align:center;color:#b9ad96;font-size:10px;margin:0 0 10px}
+.action-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.lounge-action{min-height:46px;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 5px;border:1px solid #b9975d88;border-radius:999px;background:linear-gradient(145deg,#211a12,#080908);color:#f0e5cc;font:600 13px Georgia,serif;box-shadow:inset 0 1px #fff2,0 4px 10px #0008}
+.lounge-action-gold{background:linear-gradient(180deg,#efd17e,#b98234);border-color:#f3d68d;color:#1b1309}
+.lounge-action:disabled{opacity:.35;filter:grayscale(.6);cursor:not-allowed}
+@media(max-width:390px){.karden-table{min-height:535px;padding-inline:8px}.table-players{gap:7px 3px}.seat-avatar{width:43px;height:43px}.seat-name{font-size:11px}.table-deck,.table-open-card{width:56px;height:80px}.table-piles{gap:16px}.action-buttons{gap:5px}.lounge-action{font-size:12px}}
+.playing-card{background-color:#f5f0e4;background-image:radial-gradient(#9c8d7130 .55px,transparent .8px),linear-gradient(135deg,#fff8,#e8dfcc55);background-size:4px 4px,100% 100%;border-color:#d8cdb7;box-shadow:0 9px 18px #0008,inset 0 1px #fff,inset 0 0 0 1px #e4dac6}
+.playing-card:after{content:"";position:absolute;inset:4px;border:1px solid #c7b99e88;border-radius:6px;pointer-events:none}
