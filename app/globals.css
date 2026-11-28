@@ -170,3 +170,20 @@ button:not(:disabled):active{transform:scale(.975)}
   .karden-room .self-seat .seat-avatar{width:40px;height:40px}
   .karden-room .playing-card{width:40px;height:60px}
 }
+
+
+/* Lobby must remain reachable; only the live table is a locked full-screen viewport */
+.karden-room:not(:has(.karden-table)){
+  height:auto;
+  min-height:100dvh;
+  overflow-x:hidden;
+  overflow-y:auto;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+  padding-bottom:max(28px,env(safe-area-inset-bottom))!important;
+}
+.karden-room:not(:has(.karden-table))>div{
+  width:100%;
+  min-height:0;
+  overflow:visible;
+}
