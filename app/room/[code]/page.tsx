@@ -483,8 +483,15 @@ export default function Room() {
                       <div className="table-center">
                         <div className="table-piles">
                           <div className="pile-wrap">
-                            <div className="cardback table-deck">
-                              <span>♠</span>        </div>
+                            <button
+                              type="button"
+                              disabled={!isTurn || busy || !!room.pendingPick}
+                              onClick={() => void action("karden_take_card", { p_source: "draw" })}
+                              className="cardback table-deck disabled:opacity-40 disabled:cursor-not-allowed"
+                              aria-label="Draw a card from the deck"
+                            >
+                              <span>♠</span>
+                            </button>
                             <span className="pile-caption">DRAW · {room.drawCount}</span>
                           </div>
                           <div className="pile-wrap">
@@ -553,21 +560,9 @@ export default function Room() {
                     </div>
                     <div className="table-actions">
                       <p className="action-hint">{!isTurn ? "Waiting for another player" : room.pendingPick ? "Select cards of the same rank to discard" : "Draw a card or pick the open card"}</p>
-                      <div className="action-buttons">
+                      <div className="action-buttons action-buttons-two">
                         <button type="button" onClick={() => setHandSort((v) => (v === "rank" ? "suit" : "rank"))} className="lounge-action">
                           <span>↕</span> Sort
-                        </button>
-                        <button
-                          type="button"
-                          disabled={!isTurn || busy || !!room.pendingPick}
-                          onClick={() =>
-                            void action("karden_take_card", {
-                              p_source: "draw",
-                            })
-                          }
-                          className="lounge-action"
-                        >
-                          <Layers size={17} /> Draw
                         </button>
                         <button
                           type="button"
